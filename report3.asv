@@ -217,32 +217,51 @@ for i=1:images_count
     title('Histogram equalized')
 end
 
-% TRANSFORMATION CURVES
-L = 256;
-
-rows = 4;
-columns = 2;
-
+%%
 figure;
-sgtitle('Transformation curves of biomedical images');
+sgtitle('Thresholding of biomedical images');
 for i=1:images_count
     
     img = imread(fullfile(images(i).folder, images(i).name)); % read image
-    [counts, binLocations] = imhist(img);
     
-    [len_x, len_y] = size(Im);
-    P = len_x*len_y;
+    if (i == 1)
+        subplot(rows,columns,1);
+    else
+        subplot(rows,columns,i+i-1);
+    end
     
-    cdf = cumsum(counts./P);
+    imshow(img); % plot original image
+    title('Original')
     
-    g = floor((L-1)*cdf); % 1. way
-
-    subplot(rows,columns,i);
+    subplot(rows,columns,i+i);
     Im2 = im_equalization(img);
-    plot(g); % plot histogram equalized images
-    title('Transformation curve')
-    xlim([0 256]);
+    imshow(Im2); % plot histogram equalized images
+    title('Histogram equalized')
 end
+
+%%
+[counts, binLocations] = imhist(Im);
+cdf = cumsum(counts./P);
+
+% never used
+% min_cdf = min(cdf);
+% depth = 1;
+% result = round((cdf-min_cdf)/(P-min_cdf)*(depth-1));
+
+L = 256;
+g = floor((L-1)*cdf); % 1. way
+g1 = ceil(L*cdf)-1; % 2. way
+[J,T] = histeq(Im); % 3. way
+
+% Transformation curves
+figure;
+sgtitle('Transformation curves');
+subplot(4,1,1);
+%stem(binLocations, cdf, 'Marker', 'none'); % normalized
+plot(binLocations, cdf);
+title('normalized');
+subplot(4,1,2);
+%stem(g, 'Marker', 'none');
 
 %% 1.c)
 % t = Tiff('biomedical_images_cp4\chest_image.tiff', 'r');
@@ -281,34 +300,7 @@ for i=1:images_count
     subplot(rows,columns,i+i);
     Im2 = im_equalization(img);
     imshow(Im2); % plot histogram equalized images
-    title('Histogram equalized');
-end
-
-% TRANSFORMATION CURVES
-L = 256;
-
-rows = 5;
-columns = 1;
-
-figure;
-sgtitle('Transformation curves of fractured human spine and rice images');
-for i=1:images_count
-    
-    img = imread(fullfile(images(i).folder, images(i).name)); % read image
-    [counts, binLocations] = imhist(img);
-    
-    [len_x, len_y] = size(Im);
-    P = len_x*len_y;
-    
-    cdf = cumsum(counts./P);
-    
-    g = floor((L-1)*cdf); % 1. way
-
-    subplot(rows,columns,i);
-    Im2 = im_equalization(img);
-    plot(g); % plot histogram equalized images
-    title('Transformation curve');
-    xlim([0 256]);
+    title('Histogram equalized')
 end
 
 %% 2 a.)
