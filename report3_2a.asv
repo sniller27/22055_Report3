@@ -59,7 +59,7 @@ rows = 5;
 columns = 5;
 
 T1 = 0; % Lower limit (cancer melanoma)
-T2 = 100; % Upper limit (cancer melanoma)
+T2 = ; % Upper limit (cancer melanoma)
 
 figure;
 sgtitle('Images thresholded');
