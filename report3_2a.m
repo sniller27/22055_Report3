@@ -120,6 +120,8 @@ hold off;
 % hold off;
 
 %% Thresholding
+thresholded_images = cell(1,images_count);
+
 rows = 5;
 columns = 5;
 
@@ -149,7 +151,7 @@ for i=1:images_count
     
      area = [imgStats.Area];
      
-     idx = find(area > 22000); % shows all melanomas (but with rulers)
+     %idx = find(area > 22000); % shows all melanomas (but with rulers)
      idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
  
     binI = ismember(L,idx);
@@ -157,8 +159,10 @@ for i=1:images_count
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     binI = imfill(binI,'holes');
     
-    imshow(binI);
-    %imshow(labeloverlay(gray_image,binI));
+    thresholded_images(i) = {binI};
+    
+    %imshow(binI);
+    imshow(labeloverlay(gray_image,binI));
     
 end
 hold off;
@@ -180,7 +184,7 @@ hold off;
 % hold off;
 
 %%
-no = 10;
+no = 1;
 
 %gray_image = cell2mat(x_seg(no));
 gray_image = cell2mat(x_seg(no));
@@ -198,10 +202,86 @@ binI = (gray_image > 0) & (gray_image < thresholds(no)); % thresholding
     
      area = [imgStats.Area];
 %     
-     idx = find(area > 22000 & circularity > 0.024 & area < 3290250);
+     idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+%     idx = find(area > 22000 & circularity > 0.024 & area < 3290250);
      binI = ismember(L,idx);
 
 figure;
-imshow(binI)
+imshow(binI);
 
+%%
+mask = cast(binI, class(gray_image));
+maskedRgbImage = bsxfun(@times,gray_image,cast(mask,class(gray_image)));
 
+% figure;
+% imshow(maskedRgbImage);
+
+nonZeroIndexes = maskedRgbImage ~= 0;
+oki = maskedRgbImage(nonZeroIndexes);
+% maskedRgbImage2 = (maskedRgbImage > 0);
+
+figure;
+histogram(oki);
+%imshow(imfuse(gray_image,binI));
+
+%%
+benign = cell(1,14);
+malign = cell(1,10);
+detection_result = cell(1,25);
+
+figure;
+sgtitle('histogram');
+hold on;
+for i=1:images_count
+    
+    thresholded_image = cell2mat(thresholded_images(i));
+    gray_image = cell2mat(x_seg(i));
+    
+    mask = cast(thresholded_image, class(gray_image));
+    maskedImage = bsxfun(@times,gray_image,cast(mask,class(gray_image)));
+
+    % figure;
+    % imshow(maskedRgbImage);
+
+    nonZeroIndexes = maskedImage ~= 0;
+    oki = maskedImage(nonZeroIndexes);
+    % maskedRgbImage2 = (maskedRgbImage > 0);
+    
+    if i >= 15
+        malign(i-14) = {oki};
+    else
+       benign(i) = {oki};
+    end
+    
+    %subplot(columns,rows,i);
+    cutoff_malign = 65;
+    oki = oki(oki < cutoff_malign);
+    hout = histogram(oki);
+
+    %mean(oki) % 56-61 (benign)
+    %mean(oki) % 43-55 (malign)
+    %median(oki)
+    
+    % DETECT
+    if mean(oki) < 55.5
+        detection_result(i) = {'Malign'};
+        %fprintf('malign \n');
+    else
+        detection_result(i) = {'Benign'};
+        %fprintf('benign \n');
+    end
+    
+end
+hold off;
+%% print detections
+
+rows = 5;
+columns = 5;
+
+figure;
+sgtitle('Melanoma');
+for i=1:images_count
+    subplot(columns,rows,i);
+    imshow(cell2mat(x_seg(i)))
+    title(cell2mat(detection_result(i)));
+end
