@@ -1,123 +1,80 @@
 %% Read images
 clear; clc; close all; % Clear workspace and figures
-% setup
-folder_path = 'Melanoma\';
-% henter alle billeder
-images = dir(fullfile(folder_path, '*.jpg'));
-% numel = er antal af billeder
-images_count = numel(images);
 
-x_seg = cell(1,images_count);
+folder_path = 'Melanoma\'; % images folder
+images = dir(fullfile(folder_path, '*.jpg')); % jpg-files in the images folder
+images_count = numel(images); % number of images
 
-for i=1:images_count
-    img = imread(fullfile(images(i).folder, images(i).name)); % read image
-    
-    img_grayscale = rgb2gray(img);
-    x_seg(i) = {img_grayscale};
-end
-
-%% show all images as grayscales
-rows = 5;
-columns = 5;
+%% Display color images
+rows = 5; columns = 5;
+melanoma_image = cell(1,images_count); % create cell-array for grayscale images
 
 figure;
-sgtitle('Melanoma');
+sgtitle('Melanomas');
 for i=1:images_count
+    % read image and store in cell-array
+    img = imread(fullfile(images(i).folder, images(i).name));
+    melanoma_image(i) = {img};
+    
+    % show image
     subplot(columns,rows,i);
-    imshow(cell2mat(x_seg(i)))
+    imshow(cell2mat(melanoma_image(i)))
     title(i);
 end
 
-%% Image histograms (imhist seems to lag have an annoying scale bar)
-rows = 5;
-columns = 5;
+%% Display grayscale images
+rows = 5; columns = 5;
+melanoma_image_grayscale = cell(1,images_count); % create cell-array for grayscale images
 
 figure;
-hold on;
-title('Image histograms');
-thresholds = zeros(1,images_count);
+sgtitle('Melanomas (grayscaled)');
 for i=1:images_count
-subplot(columns,rows,i);
-gray_image = cell2mat(x_seg(i));
-[H,W] = size(gray_image);
-M = H*W;
-%%tt = double(reshape(cell2mat(x_seg(i)), M, 1));
-hout = histogram(double(reshape(gray_image, M, 1)));
-hold on;
-
+    img = cell2mat(melanoma_image(i)); % read image
+    melanoma_image_grayscale(i) = {rgb2gray(img)}; % convert to grayscale
+    
+    % show image
+    subplot(columns,rows,i);
+    imshow(cell2mat(melanoma_image_grayscale(i)))
+    title(i);
+end
+%%
+figure;
+histogram(double(reshape(gray_image, M, 1)))
+%% Histograms of grayscaled melanomas (imhist seems to lag have an annoying scale bar)
+rows = 5; columns = 5;
+thresholds = zeros(1,images_count);
 cutoff = 190; % was originally 'end' (improves thresholding of multithresh())
-histLine = hout.Values(1:2:cutoff);
-histLineX = hout.BinEdges(2:2:cutoff);
 
-% stuff
-[val,troughloc] = findpeaks(-histLine,histLineX,'MinPeakProminence',1000);
-plot(histLineX,histLine);
-%plot(troughloc,-val,'*');
-xlim([0 255]);
+figure;
+sgtitle('Histograms of grayscaled melanomas');
+for i=1:images_count
+    
+    gray_image = cell2mat(melanoma_image_grayscale(i)); % get grayscale image
+    [H,W] = size(gray_image); % image size
+    M = H*W; % number of pixels
+    
+    subplot(columns,rows,i);
+    title(i);
+    hold on;
 
-bimodal_threshold = double(multithresh(gray_image));
-[ difference, index ] = min( abs( histLineX-bimodal_threshold ) );
+    hout = histogram(double(reshape(gray_image, M, 1)));
+    
+    histLine = hout.Values(1:2:cutoff);
+    histLineX = hout.BinEdges(2:2:cutoff);
+    
+    bimodal_threshold = double(multithresh(gray_image));
+    [ difference, index ] = min( abs( histLineX-bimodal_threshold ) ); % finding closest value to threshold
+    
+    thresholds(i) = (histLineX(index));
+    
+    % plot histogram and threshold
+    %plot(histLineX,histLine);
+    plot(histLineX(index),histLine(index),'*');
+    xlim([0 255]);
 
-plot(histLineX(index),histLine(index),'*');
-
-thresholds(i) = (histLineX(index));
-
-%bimodal_min = find(histLine==multithresh(gray_image));
-%plot(troughloc,-val,'*');
-
-%[pks,locs] = sort(findpeaks(histLine), 'desc');
-
-% max1_index = find(histLine==pks(1));
-% max2_index = find(histLine==pks(2));
-% 
-% max1 = histLineX(max1_index);
-% max2 = histLineX(max2_index);
-% 
-% xline(max1,'r');
-% xline(max2,'r');
-
-% figure;
-% plot(hout.Data);
-
-% figure;
-% plot(histLineX(max2_index:max1_index),histLine(max2_index:max1_index))
-% xlim([0 255]);
-% xline(max1,'r');
-% xline(max2,'r');
-
-%min_index = find(histLine==min(histLine(max2_index:max1_index)));
-%xline(histLineX(min_index),'b');
-%plot(histLineX(min_index),min(histLine(max2_index:max1_index)),'*');
-
-%findpeaks(histLine(max1:max2))
-
-%[val,troughloc] = findpeaks(-histLine,histLineX,'MinPeakProminence',1);
-
-%counter = 1;
-
-% while(length(val)>1)
-%     [val,troughloc2] = findpeaks(-histLine,histLineX,'MinPeakProminence',1+counter);
-%     counter = counter+1;
-% end
-
-% thresholds(i) = (troughloc2);
-% plot(histLineX,histLine);
-% plot(troughloc2,-val,'*');
 end
 
 hold off;
-
-% subplot(2,1,2);
-% hold on;
-% title('Image histograms equalized');
-% for i=1:images_count
-% gray_image = histeq(cell2mat(x_seg(i)));
-% [H,W] = size(gray_image);
-% M = H*W;
-% %%tt = double(reshape(cell2mat(x_seg(i)), M, 1));
-% histogram(double(reshape(gray_image, M, 1)));
-% end
-% hold off;
 
 %% Thresholding
 thresholded_images = cell(1,images_count);
@@ -133,7 +90,7 @@ sgtitle('Images thresholded');
 hold on;
 for i=1:images_count
     
-    gray_image = cell2mat(x_seg(i));
+    gray_image = cell2mat(melanoma_image_grayscale(i));
     binI = (gray_image > 0) & (gray_image < thresholds(i)); % thresholding
     
     subplot(columns,rows,i);
@@ -175,7 +132,7 @@ hold off;
 % hold on;
 % for i=1:images_count
 %     
-%     gray_image = histeq(cell2mat(x_seg(i)));
+%     gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
 %     binI = (gray_image > T1) & (gray_image < T2); % thresholding
 %     subplot(columns,rows,i);
 %     imshow(binI);
@@ -186,8 +143,8 @@ hold off;
 %%
 no = 1;
 
-%gray_image = cell2mat(x_seg(no));
-gray_image = cell2mat(x_seg(no));
+%gray_image = cell2mat(melanoma_image_grayscale(no));
+gray_image = cell2mat(melanoma_image_grayscale(no));
 %binI = (gray_image > 0) & (gray_image < 20); % thresholding (smaller ones)
 binI = (gray_image > 0) & (gray_image < thresholds(no)); % thresholding
 %binI = (gray_image > 0) & (gray_image < 130); % thresholding (big ones)
@@ -235,7 +192,7 @@ hold on;
 for i=1:images_count
     
     thresholded_image = cell2mat(thresholded_images(i));
-    gray_image = cell2mat(x_seg(i));
+    gray_image = cell2mat(melanoma_image_grayscale(i));
     
     mask = cast(thresholded_image, class(gray_image));
     maskedImage = bsxfun(@times,gray_image,cast(mask,class(gray_image)));
@@ -282,6 +239,6 @@ figure;
 sgtitle('Melanoma');
 for i=1:images_count
     subplot(columns,rows,i);
-    imshow(cell2mat(x_seg(i)))
+    imshow(cell2mat(melanoma_image_grayscale(i)))
     title(cell2mat(detection_result(i)));
 end
