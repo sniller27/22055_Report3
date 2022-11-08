@@ -166,8 +166,9 @@ rows = 5; columns = 5;
 % sgtitle('Images thresholded');
 % hold on;
 
-%% Segmentation based on edge-detection and morphology
+%% Segmentation based on edge-detection and morphology (1. part of the algorithm)
 rows = 5; columns = 5;
+edge_segmented = cell(1,25);
 
 fudgeFactor = 0.5; % 0.4-0.6
 %increase = 0.02;
@@ -215,13 +216,22 @@ for i=1:25
 
     circularity = [imgStats.Circularity];
     
-     area = [imgStats.Area];
+    area = [imgStats.Area];
      
-     idx = find(area > 85000 & circularity > 0.2); % shows all melanomas (but with rulers)
-     %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
-     %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
- 
+    idx = find(area > 85000 & circularity > 0.22); % shows all melanomas (but with rulers)
+    %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
+    %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+    
+    [qty,data] = size(idx);
+    
+    if data >= 1
+        edge_segmented(i) = {1};
+    else
+        edge_segmented(i) = {0};
+    end
+     
     BWs = ismember(L,idx);
+    BWs = imclearborder(BWs,4);
     %%%%%%%%%%%%%%%%%%%%%
     
     edged_images(i) = {BWs};
@@ -236,10 +246,28 @@ for i=1:25
     title(fudgeFactor);
     %hold on;
     
-    
-    
 end
 hold off;
+
+
+%% Segmentation based on edge-detection and morphology (1. part of the algorithm)
+rows = 5;
+columns = 5;
+
+figure;
+sgtitle('Melanoma');
+for i=1:images_count
+    
+    gray_image = histeq(cell2mat(edge_segmented(i)); % fudge=0.5.
+    if edge_segmented(i) == 0
+        
+        2+2
+%         subplot(columns,rows,i);
+%         imshow(cell2mat(melanoma_image_grayscale(i)))
+%         title(cell2mat(detection_result(i)));
+    end
+    
+end
 
 
 %% Detection: only select melanomas from segments (masks) ... based on histograms pixel means (maligns are darker)
