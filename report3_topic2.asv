@@ -170,19 +170,18 @@ for i=1:1
     %fudge_increment = fudge_increment + 0.05;
     
     gray_image = cell2mat(melanoma_image_grayscale(1));
-    gray_
-    gray_image = imgaussfilt(gray_image,50);
+    [J,rect] = imcrop(gray_image);
+    gray_image = imgaussfilt(J,50);
     
     %gray_image = imadjust(gray_image);
     figure;
     imhist(gray_image);
     
-    
     [~,threshold] = edge(gray_image,'sobel');
     
-    fudgeFactor = 0.5;
-    BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
-    %BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
+    fudgeFactor = 0.6;
+    %BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
+    BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
     %BWs = edge(gray_image,'roberts',threshold * fudgeFactor);
     
     %fudgeFactor = 0.1;
@@ -203,13 +202,13 @@ for i=1:1
     
     
     
-%     
-%     se90 = strel('line',3,90);
-%     se0 = strel('line',3,0);
-%     
-%     BWs = imdilate(BWs,[se90 se0]);
-%     
-%     BWs = imfill(BWs,'holes');
+    
+    se90 = strel('line',3,90);
+    se0 = strel('line',3,0);
+    
+    BWs = imdilate(BWs,[se90 se0]);
+    
+    BWs = imfill(BWs,'holes');
 %     BWs = imclearborder(BWs,4);
 %     
 %     seD = strel('diamond',1);
@@ -233,12 +232,14 @@ end
 hold off;
 
 
+%%
+%folder_path = '\'; % images folder
+images = dir(fullfile('', '*.tiff')); % jpg-files in the images folder
 
+img = imread(fullfile(images(1).folder, images(1).name));
 
-
-
-
-
+figure;
+imshow(img);
 
 
 %% Detection: only select melanomas from segments (masks) ... based on histograms pixel means (maligns are darker)

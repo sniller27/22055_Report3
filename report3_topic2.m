@@ -165,24 +165,32 @@ rows = 5; columns = 5;
 %figure;
 % sgtitle('Images thresholded');
 % hold on;
-for i=1:1
+
+%% Segmentation based on edge-detection and morphology
+rows = 5; columns = 5;
+
+figure;
+sgtitle('Segmentation based on edge detection and morphology');
+hold on;
+for i=1:10
     
     %fudge_increment = fudge_increment + 0.05;
-    close all
-    gray_image = cell2mat(melanoma_image_grayscale(1));
-    [J,rect] = imcrop(gray_image);
-    gray_image = imgaussfilt(J,50);
+    
+%    gray_image = img;
+    gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
+    %[J,rect] = imcrop(gray_image);
+    %gray_image = imgaussfilt(J,50);
+    
+%     figure;
+%     imhist(gray_image);
     
     %gray_image = imadjust(gray_image);
-    figure;
-    imhist(gray_image);
-    
     
     [~,threshold] = edge(gray_image,'sobel');
     
-    fudgeFactor = 0.6;
-    %BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
-    BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
+    fudgeFactor = 0.1; % 0.3-1.2
+    BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
+    %BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
     %BWs = edge(gray_image,'roberts',threshold * fudgeFactor);
     
     %fudgeFactor = 0.1;
@@ -201,15 +209,29 @@ for i=1:1
     %BWs = edge(gray_image,'canny');
     
     
+%     se90 = strel('line',1,90);
+%     se0 = strel('line',1,0);
+%     
+%     BWs = imdilate(BWs,[se90 se0]);
+    
+%     SE = strel('disk',5);            
+%     BWs = imerode(BWs,SE);
+%     
+
+    SE = strel('disk',5);     
+    BWs = imdilate(BWs,SE);
+    
+    SE = strel('disk',15);     
+    BWs = imerode(BWs,SE);
     
     
-    
-    se90 = strel('line',3,90);
-    se0 = strel('line',3,0);
-    
-    BWs = imdilate(BWs,[se90 se0]);
+    BWs = logical(255) - BWs;
     
     BWs = imfill(BWs,'holes');
+    
+    SE = strel('disk',15);     
+    BWs = imerode(BWs,SE);
+    
 %     BWs = imclearborder(BWs,4);
 %     
 %     seD = strel('diamond',1);
@@ -218,11 +240,12 @@ for i=1:1
     
     edged_images(i) = {BWs};
     
-    figure;
-    subplot(1,2,1);
-    imshow(gray_image);
-    subplot(1,2,2);
-    imshow(BWs);
+%     figure;
+%     subplot(1,2,1);
+%     imshow(gray_image);
+     subplot(columns,rows,i);
+     imshow(BWs);
+    
     %imshow(labeloverlay(gray_image,binI));
     %title(i);
     %hold on;
@@ -231,14 +254,6 @@ for i=1:1
     
 end
 hold off;
-
-
-
-
-
-
-
-
 
 
 %% Detection: only select melanomas from segments (masks) ... based on histograms pixel means (maligns are darker)
