@@ -313,225 +313,225 @@ for i=1:images_count
 end
 
 %% 2 a.) read melanoma images (takes some time)
-clear; clc; close all; % Clear workspace and figures
-
-% setup
-folder_path = 'Melanoma\';
-% henter alle billeder
-images = dir(fullfile(folder_path, '*.jpg'));
-% numel = er antal af billeder
-images_count = numel(images);
-
-x_seg = cell(1,images_count);
-
-for i=1:images_count
-    img = imread(fullfile(images(i).folder, images(i).name)); % read image
-    img_grayscale = rgb2gray(img);
-    x_seg(i) = {img_grayscale};
-end
+% clear; clc; close all; % Clear workspace and figures
+% 
+% % setup
+% folder_path = 'Melanoma\';
+% % henter alle billeder
+% images = dir(fullfile(folder_path, '*.jpg'));
+% % numel = er antal af billeder
+% images_count = numel(images);
+% 
+% x_seg = cell(1,images_count);
+% 
+% for i=1:images_count
+%     img = imread(fullfile(images(i).folder, images(i).name)); % read image
+%     img_grayscale = rgb2gray(img);
+%     x_seg(i) = {img_grayscale};
+% end
 
 %% all grayscales
-rows = 5;
-columns = 5;
-
-figure;
-sgtitle('Melanoma');
-for i=1:images_count
-    subplot(columns,rows,i);
-    imshow(cell2mat(x_seg(i)))
-    title(i);
-end
+% rows = 5;
+% columns = 5;
+% 
+% figure;
+% sgtitle('Melanoma');
+% for i=1:images_count
+%     subplot(columns,rows,i);
+%     imshow(cell2mat(x_seg(i)))
+%     title(i);
+% end
 
 %% all thresholded
-rows = 5;
-columns = 5;
-
-T1 = 0; % Lower limit (cancer melanoma)
-T2 = 90; % Upper limit (cancer melanoma)
-
-figure;
-sgtitle('Melanoma');
-for i=1:images_count
-    gray_image = cell2mat(x_seg(i));
-    % gray_image = histeq(cell2mat(x_seg(i)));
-    binI = (gray_image > T1) & (gray_image < T2); % thresholding
-    
-    se = strel('disk',10);        
-    
-    BWe = imdilate(binI,se);
-
-    L = bwlabel(BWe,8);
-    L1 = label2rgb(L);
-
-    imgStats = regionprops(L, 'All');
-
-    circularity = [imgStats.Circularity];
-    area = [imgStats.Area];
-
-    idx = find(area > 47000 & circularity > 0.29);
-    %idx = find([imgStats.Circularity] > 0.6 & [imgStats.Circularity] < 0.62);
-
-    BW2 = ismember(L,idx);
-    
-    subplot(columns,rows,i);
-    %imshow(binI);
-    imagesc(BW2); 
-    axis image;
-    
-    if isempty(idx)~=1
-        title(circularity(idx(1)));
-    end
-end
-
-%%
-no = 1; % 6, 7
-
-%gray_image = cell2mat(x_seg(no));
-gray_image = histeq(cell2mat(x_seg(no)));
-binI = (gray_image > 0) & (gray_image < 20); % thresholding (smaller ones)
-%binI = (gray_image > 0) & (gray_image < 130); % thresholding (big ones)
-figure;
-imshow(binI)
-
-%%
-se = strel('disk',10);        
-BWe = imdilate(binI,se);
-
-L = bwlabel(BWe,8);
-L1 = label2rgb(L);
-
-imgStats = regionprops(L, 'All');
-
-circularity = [imgStats.Circularity];
-area = [imgStats.Area];
-
-idx = find(area > 47000 & circularity > 0.29);
-%idx = find([imgStats.Circularity] > 0.6 & [imgStats.Circularity] < 0.62);
-
-BW2 = ismember(L,idx);
-figure, imagesc(BW2); 
-axis image;
-
-if isempty(idx)~=1
-        title(circularity(idx(1)));
-end
-
-%% max-values in histograms
-for i=1:images_count
-    [counts,x] = imhist(cell2mat(x_seg(i)));
-    %find(x == max(counts))
-    max(counts)
-end
-
-%% histograms
-figure;
-%hist(double(cell2mat(x_seg(1))), length(double(cell2mat(x_seg(1))))); % takes one minute!!!!!!
-hold on;
-imhist(cell2mat(x_seg(1)));
-imhist(cell2mat(x_seg(4)));
-imhist(cell2mat(x_seg(5)));
-imhist(cell2mat(x_seg(6)));
-imhist(cell2mat(x_seg(9)));
-imhist(cell2mat(x_seg(12)));
-imhist(cell2mat(x_seg(10)));
-ylim([0 500000]);
-%hold off;
-
-%% histograms equalized
-figure;
-%hist(double(cell2mat(x_seg(1))), length(double(cell2mat(x_seg(1))))); % takes one minute!!!!!!
-hold on;
-imhist(histeq(cell2mat(x_seg(1))));
-imhist(histeq(cell2mat(x_seg(4))));
-imhist(histeq(cell2mat(x_seg(5))));
-imhist(histeq(cell2mat(x_seg(6))));
-imhist(histeq(cell2mat(x_seg(9))));
-imhist(histeq(cell2mat(x_seg(12))));
-imhist(histeq(cell2mat(x_seg(10))));
-ylim([0 500000]);
-%hold off;
-
-%%
-% setup
-folder_path = 'Melanoma\';
-% henter alle billeder
-images = dir(fullfile(folder_path, '*.jpg'));
-
-img = imread(fullfile(images(1).folder, images(20).name));
-img_grayscale = rgb2gray(img);
-%imshow(img_grayscale);
-
-% imhist => viser 118-181
-
-%T1 = 30; % Lower limit (normal melanoma)
-%T2 = 110; % Upper limit (normal melanoma)
-
-%T1 = 0; % Lower limit (cancer melanoma)
-%T2 = 40; % Upper limit (cancer melanoma)
-
-
-% histogram equalized
-% img_grayscale = histeq(img_grayscale);
-
-T1 = 0; % Lower limit (cancer melanoma)
-T2 = 90; % Upper limit (cancer melanoma)
-%210-255 er lineal
-
-% MARK EDGES
-% [~,threshold] = edge(img_grayscale,'sobel');
-% fudgeFactor = 0.5;
-% img_grayscale = edge(img_grayscale,'sobel',threshold * fudgeFactor);
-
-% figure;
-% imshow(img_grayscale);
-
-binI = (img_grayscale > T1) & (img_grayscale < T2); % thresholding
-
-figure;
-imshow(binI);
-
-%binI = imclearborder(binI,4);
-
-%seD = strel('diamond',1);
-%binI = imerode(binI,seD);
-
-se = strel('disk',3);        
-BWe = imopen(binI,se);
-
-se = strel('disk',10);        
-BWe = imdilate(BWe,se);
-
-[~,threshold] = edge(BWe,'sobel');
-fudgeFactor = 0.5;
-BWe = edge(BWe,'sobel',threshold * fudgeFactor);
-
-% figure;
-% imshow(BWe);
-
-% labels
-L = bwlabel(BWe,8);
-L1 = label2rgb(L);
-
-imgStats = regionprops(L, 'All');
-
-cellPerimeter = [imgStats.Perimeter];
-cellArea = [imgStats.Area];
-
-%figure, plot(cellPerimeter, cellArea, '.');  xlabel('Perimeter'); ylabel('Area');
-
-% figure, hist([imgStats.Area]); title('Cell Area Histogram');
-
-% idx = find([imgStats.Area] > 1500);
-% %idx = find([imgStats.Area] > 1500 & [imgStats.Area] < 4000);
+% rows = 5;
+% columns = 5;
 % 
+% T1 = 0; % Lower limit (cancer melanoma)
+% T2 = 90; % Upper limit (cancer melanoma)
+% 
+% figure;
+% sgtitle('Melanoma');
+% for i=1:images_count
+%     gray_image = cell2mat(x_seg(i));
+%     % gray_image = histeq(cell2mat(x_seg(i)));
+%     binI = (gray_image > T1) & (gray_image < T2); % thresholding
+%     
+%     se = strel('disk',10);        
+%     
+%     BWe = imdilate(binI,se);
+% 
+%     L = bwlabel(BWe,8);
+%     L1 = label2rgb(L);
+% 
+%     imgStats = regionprops(L, 'All');
+% 
+%     circularity = [imgStats.Circularity];
+%     area = [imgStats.Area];
+% 
+%     idx = find(area > 47000 & circularity > 0.29);
+%     %idx = find([imgStats.Circularity] > 0.6 & [imgStats.Circularity] < 0.62);
+% 
+%     BW2 = ismember(L,idx);
+%     
+%     subplot(columns,rows,i);
+%     %imshow(binI);
+%     imagesc(BW2); 
+%     axis image;
+%     
+%     if isempty(idx)~=1
+%         title(circularity(idx(1)));
+%     end
+% end
+
+%%
+% no = 1; % 6, 7
+% 
+% %gray_image = cell2mat(x_seg(no));
+% gray_image = histeq(cell2mat(x_seg(no)));
+% binI = (gray_image > 0) & (gray_image < 20); % thresholding (smaller ones)
+% %binI = (gray_image > 0) & (gray_image < 130); % thresholding (big ones)
+% figure;
+% imshow(binI)
+
+%%
+% se = strel('disk',10);        
+% BWe = imdilate(binI,se);
+% 
+% L = bwlabel(BWe,8);
+% L1 = label2rgb(L);
+% 
+% imgStats = regionprops(L, 'All');
+% 
+% circularity = [imgStats.Circularity];
+% area = [imgStats.Area];
+% 
+% idx = find(area > 47000 & circularity > 0.29);
+% %idx = find([imgStats.Circularity] > 0.6 & [imgStats.Circularity] < 0.62);
 % 
 % BW2 = ismember(L,idx);
-% figure, imagesc(BW2); axis image; title('Object with area > 200');
+% figure, imagesc(BW2); 
+% axis image;
 % 
+% if isempty(idx)~=1
+%         title(circularity(idx(1)));
+% end
 
-% thresholding? => morphological operations?
-% histogram equalization?
-% circularity?
+%% max-values in histograms
+% for i=1:images_count
+%     [counts,x] = imhist(cell2mat(x_seg(i)));
+%     %find(x == max(counts))
+%     max(counts)
+% end
+
+%% histograms
+% figure;
+% %hist(double(cell2mat(x_seg(1))), length(double(cell2mat(x_seg(1))))); % takes one minute!!!!!!
+% hold on;
+% imhist(cell2mat(x_seg(1)));
+% imhist(cell2mat(x_seg(4)));
+% imhist(cell2mat(x_seg(5)));
+% imhist(cell2mat(x_seg(6)));
+% imhist(cell2mat(x_seg(9)));
+% imhist(cell2mat(x_seg(12)));
+% imhist(cell2mat(x_seg(10)));
+% ylim([0 500000]);
+% %hold off;
+
+%% histograms equalized
+% figure;
+% %hist(double(cell2mat(x_seg(1))), length(double(cell2mat(x_seg(1))))); % takes one minute!!!!!!
+% hold on;
+% imhist(histeq(cell2mat(x_seg(1))));
+% imhist(histeq(cell2mat(x_seg(4))));
+% imhist(histeq(cell2mat(x_seg(5))));
+% imhist(histeq(cell2mat(x_seg(6))));
+% imhist(histeq(cell2mat(x_seg(9))));
+% imhist(histeq(cell2mat(x_seg(12))));
+% imhist(histeq(cell2mat(x_seg(10))));
+% ylim([0 500000]);
+% %hold off;
+
+%%
+% % setup
+% folder_path = 'Melanoma\';
+% % henter alle billeder
+% images = dir(fullfile(folder_path, '*.jpg'));
+% 
+% img = imread(fullfile(images(1).folder, images(20).name));
+% img_grayscale = rgb2gray(img);
+% %imshow(img_grayscale);
+% 
+% % imhist => viser 118-181
+% 
+% %T1 = 30; % Lower limit (normal melanoma)
+% %T2 = 110; % Upper limit (normal melanoma)
+% 
+% %T1 = 0; % Lower limit (cancer melanoma)
+% %T2 = 40; % Upper limit (cancer melanoma)
+% 
+% 
+% % histogram equalized
+% % img_grayscale = histeq(img_grayscale);
+% 
+% T1 = 0; % Lower limit (cancer melanoma)
+% T2 = 90; % Upper limit (cancer melanoma)
+% %210-255 er lineal
+% 
+% % MARK EDGES
+% % [~,threshold] = edge(img_grayscale,'sobel');
+% % fudgeFactor = 0.5;
+% % img_grayscale = edge(img_grayscale,'sobel',threshold * fudgeFactor);
+% 
+% % figure;
+% % imshow(img_grayscale);
+% 
+% binI = (img_grayscale > T1) & (img_grayscale < T2); % thresholding
+% 
+% figure;
+% imshow(binI);
+% 
+% %binI = imclearborder(binI,4);
+% 
+% %seD = strel('diamond',1);
+% %binI = imerode(binI,seD);
+% 
+% se = strel('disk',3);        
+% BWe = imopen(binI,se);
+% 
+% se = strel('disk',10);        
+% BWe = imdilate(BWe,se);
+% 
+% [~,threshold] = edge(BWe,'sobel');
+% fudgeFactor = 0.5;
+% BWe = edge(BWe,'sobel',threshold * fudgeFactor);
+% 
+% % figure;
+% % imshow(BWe);
+% 
+% % labels
+% L = bwlabel(BWe,8);
+% L1 = label2rgb(L);
+% 
+% imgStats = regionprops(L, 'All');
+% 
+% cellPerimeter = [imgStats.Perimeter];
+% cellArea = [imgStats.Area];
+% 
+% %figure, plot(cellPerimeter, cellArea, '.');  xlabel('Perimeter'); ylabel('Area');
+% 
+% % figure, hist([imgStats.Area]); title('Cell Area Histogram');
+% 
+% % idx = find([imgStats.Area] > 1500);
+% % %idx = find([imgStats.Area] > 1500 & [imgStats.Area] < 4000);
+% % 
+% % 
+% % BW2 = ismember(L,idx);
+% % figure, imagesc(BW2); axis image; title('Object with area > 200');
+% % 
+% 
+% % thresholding? => morphological operations?
+% % histogram equalization?
+% % circularity?
 
 %% histogram equalization function
 function [im_equalized] = im_equalization(Im)
