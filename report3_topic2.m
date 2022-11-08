@@ -172,77 +172,41 @@ rows = 5; columns = 5;
 figure;
 sgtitle('Segmentation based on edge detection and morphology');
 hold on;
-for i=1:10
+for i=1:5
     
     %fudge_increment = fudge_increment + 0.05;
     
 %    gray_image = img;
     gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
-    %[J,rect] = imcrop(gray_image);
-    %gray_image = imgaussfilt(J,50);
-    
-%     figure;
-%     imhist(gray_image);
-    
-    %gray_image = imadjust(gray_image);
     
     [~,threshold] = edge(gray_image,'sobel');
     
-    fudgeFactor = 0.1; % 0.3-1.2
+    fudgeFactor = 0.4; % 0.3-1.2
     BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
-    %BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
-    %BWs = edge(gray_image,'roberts',threshold * fudgeFactor);
     
-    %fudgeFactor = 0.1;
-    %BWs = edge(gray_image,'log',threshold * fudgeFactor);
+    BWs = logical(255) - BWs; % inverting the image
     
-    %fudgeFactor = 0.1;
-    %BWs = edge(gray_image,'zerocross',threshold * fudgeFactor);
-    
-    %fudgeFactor = 5.9;
-    %BWs = edge(gray_image,'canny',threshold * fudgeFactor);
-    %BWs = edge(gray_image,'approxcanny',threshold * fudgeFactor);
-    
-    %BWs = im2bw(gray_image);
-    %mehss = bwboundaries(BWs)
-    
-    %BWs = edge(gray_image,'canny');
-    
-    
-%     se90 = strel('line',1,90);
-%     se0 = strel('line',1,0);
+%     SE = strel('disk',5);     
+%     BWs = imdilate(BWs,SE);
 %     
-%     BWs = imdilate(BWs,[se90 se0]);
-    
-%     SE = strel('disk',5);            
+%     SE = strel('disk',15);     
 %     BWs = imerode(BWs,SE);
-%     
-
-    SE = strel('disk',5);     
+    
+    
+    
+    SE = strel('disk',3);     
+    BWs = imerode(BWs,SE);
+    
+    SE = strel('disk',3);     
     BWs = imdilate(BWs,SE);
     
-    SE = strel('disk',15);     
-    BWs = imerode(BWs,SE);
-    
-    
-    BWs = logical(255) - BWs;
-    
     BWs = imfill(BWs,'holes');
-    
-    SE = strel('disk',15);     
-    BWs = imerode(BWs,SE);
-    
-%     BWs = imclearborder(BWs,4);
-%     
-%     seD = strel('diamond',1);
-%     BWs = imerode(BWs,seD);
-%     BWs = imerode(BWs,seD);
     
     edged_images(i) = {BWs};
     
 %     figure;
-%     subplot(1,2,1);
-%     imshow(gray_image);
+%     imshow(BWs);
+
      subplot(columns,rows,i);
      imshow(BWs);
     
