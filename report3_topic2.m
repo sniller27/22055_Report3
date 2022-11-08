@@ -166,41 +166,64 @@ rows = 5; columns = 5;
 % sgtitle('Images thresholded');
 % hold on;
 
-%% Segmentation based on edge-detection and morphology
+%% Segmentation based on edge-detection and morphology (1. algorithm)
 rows = 5; columns = 5;
+
+fudgeFactor = 0.5; % 0.4-0.6
+%increase = 0.02;
 
 figure;
 sgtitle('Segmentation based on edge detection and morphology');
 hold on;
-for i=1:5
+for i=1:images_count
     
-    %fudge_increment = fudge_increment + 0.05;
+    % fudgeFactor = fudgeFactor + increase;
     
-%    gray_image = img;
-    gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
+    %gray_image = cell2mat(melanoma_image_grayscale(9)); % fudge=0.5.
+    gray_image = histeq(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
+    %gray_image = adapthisteq(cell2mat(melanoma_image_grayscale(9)));
     
     [~,threshold] = edge(gray_image,'sobel');
     
-    fudgeFactor = 0.4; % 0.3-1.2
     BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
+
+%     fudgeFactor = 1.5; % 0.4-0.6
+%     BWs = edge(gray_image,'Canny',threshold * fudgeFactor);
+    
+%     fudgeFactor = 0.5; % 0.4-0.6
+%     BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
     
     BWs = logical(255) - BWs; % inverting the image
     
-%     SE = strel('disk',5);     
-%     BWs = imdilate(BWs,SE);
-%     
-%     SE = strel('disk',15);     
-%     BWs = imerode(BWs,SE);
-    
-    
-    
-    SE = strel('disk',3);     
+    SE = strel('disk',6);     
     BWs = imerode(BWs,SE);
     
-    SE = strel('disk',3);     
+    SE = strel('disk',12);     
     BWs = imdilate(BWs,SE);
     
-    BWs = imfill(BWs,'holes');
+    %BWs = imfill(BWs,'holes');
+        
+    SE = strel('disk',18);     
+    BWs = imerode(BWs,SE);
+    
+    BWs = imfill(BWs);
+    
+    %%%%%%%%%%%%%%%%%%%%%
+    L = bwlabel(BWs,8);
+
+    imgStats = regionprops(L, 'All');
+
+    circularity = [imgStats.Circularity];
+    
+     area = [imgStats.Area];
+     
+     idx = find(area > 85000 & circularity > 0.22); % shows all melanomas (but with rulers)
+     %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
+     %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+ 
+    BWs = ismember(L,idx);
+    BWs = imclearborder(BWs,4);
+    %%%%%%%%%%%%%%%%%%%%%
     
     edged_images(i) = {BWs};
     
@@ -211,7 +234,7 @@ for i=1:5
      imshow(BWs);
     
     %imshow(labeloverlay(gray_image,binI));
-    %title(i);
+    title(fudgeFactor);
     %hold on;
     
     

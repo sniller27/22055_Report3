@@ -165,81 +165,81 @@ rows = 5; columns = 5;
 %figure;
 % sgtitle('Images thresholded');
 % hold on;
-for i=1:1
+
+%% Segmentation based on edge-detection and morphology
+rows = 5; columns = 5;
+
+fudgeFactor = 0.5; % 0.4-0.6
+%increase = 0.02;
+
+figure;
+sgtitle('Segmentation based on edge detection and morphology');
+hold on;
+for i=1:25
     
-    %fudge_increment = fudge_increment + 0.05;
+    % fudgeFactor = fudgeFactor + increase;
     
-    gray_image = cell2mat(melanoma_image_grayscale(1));
-    [J,rect] = imcrop(gray_image);
-    gray_image = imgaussfilt(J,50);
-    
-    %gray_image = imadjust(gray_image);
-    figure;
-    imhist(gray_image);
+    %gray_image = cell2mat(melanoma_image_grayscale(9)); % fudge=0.5.
+    gray_image = histeq(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
+    %gray_image = adapthisteq(cell2mat(melanoma_image_grayscale(9)));
     
     [~,threshold] = edge(gray_image,'sobel');
     
-    fudgeFactor = 0.6;
-    %BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
-    BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
-    %BWs = edge(gray_image,'roberts',threshold * fudgeFactor);
+    BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
+
+%     fudgeFactor = 1.5; % 0.4-0.6
+%     BWs = edge(gray_image,'Canny',threshold * fudgeFactor);
     
-    %fudgeFactor = 0.1;
-    %BWs = edge(gray_image,'log',threshold * fudgeFactor);
+%     fudgeFactor = 0.5; % 0.4-0.6
+%     BWs = edge(gray_image,'prewitt',threshold * fudgeFactor);
     
-    %fudgeFactor = 0.1;
-    %BWs = edge(gray_image,'zerocross',threshold * fudgeFactor);
+    BWs = logical(255) - BWs; % inverting the image
     
-    %fudgeFactor = 5.9;
-    %BWs = edge(gray_image,'canny',threshold * fudgeFactor);
-    %BWs = edge(gray_image,'approxcanny',threshold * fudgeFactor);
+    SE = strel('disk',6);     
+    BWs = imerode(BWs,SE);
     
-    %BWs = im2bw(gray_image);
-    %mehss = bwboundaries(BWs)
+    SE = strel('disk',12);     
+    BWs = imdilate(BWs,SE);
     
-    %BWs = edge(gray_image,'canny');
+    %BWs = imfill(BWs,'holes');
+        
+    SE = strel('disk',18);     
+    BWs = imerode(BWs,SE);
     
+    BWs = imfill(BWs);
     
+    %%%%%%%%%%%%%%%%%%%%%
+    L = bwlabel(BWs,8);
+
+    imgStats = regionprops(L, 'All');
+
+    circularity = [imgStats.Circularity];
     
-    
-    
-    se90 = strel('line',3,90);
-    se0 = strel('line',3,0);
-    
-    BWs = imdilate(BWs,[se90 se0]);
-    
-    BWs = imfill(BWs,'holes');
-%     BWs = imclearborder(BWs,4);
-%     
-%     seD = strel('diamond',1);
-%     BWs = imerode(BWs,seD);
-%     BWs = imerode(BWs,seD);
+     area = [imgStats.Area];
+     
+     idx = find(area > 85000 & circularity > 0.2); % shows all melanomas (but with rulers)
+     %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
+     %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+ 
+    BWs = ismember(L,idx);
+    %%%%%%%%%%%%%%%%%%%%%
     
     edged_images(i) = {BWs};
     
-    figure;
-    subplot(1,2,1);
-    imshow(gray_image);
-    subplot(1,2,2);
-    imshow(BWs);
+%     figure;
+%     imshow(BWs);
+
+     subplot(columns,rows,i);
+     imshow(BWs);
+    
     %imshow(labeloverlay(gray_image,binI));
-    %title(i);
+    title(fudgeFactor);
     %hold on;
     
     
     
 end
 hold off;
-
-
-%%
-%folder_path = '\'; % images folder
-images = dir(fullfile('', '*.tiff')); % jpg-files in the images folder
-
-img = imread(fullfile(images(1).folder, images(1).name));
-
-figure;
-imshow(img);
 
 
 %% Detection: only select melanomas from segments (masks) ... based on histograms pixel means (maligns are darker)
