@@ -205,13 +205,19 @@ for i=1:25
     
     % fudgeFactor = fudgeFactor + increase;
     
+    % DIFFERENT KINDS OF IMAGE ENHANCEMENTS
+    % link: https://www.mathworks.com/help/images/contrast-enhancement-techniques.html
     %gray_image = cell2mat(melanoma_image_grayscale(9)); % fudge=0.5.
     gray_image = histeq(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
     %gray_image = adapthisteq(cell2mat(melanoma_image_grayscale(9)));
+    %gray_image = imadjust(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
+    %gray_image = imsharpen(gray_image);
+    %gray_image = imgaussfilt(gray_image,1);
     
+    % EDGE THRESHOLDING
     [~,threshold] = edge(gray_image,'sobel');
     
-    BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
+    BWs = edge(gray_image,'sobel',threshold * fudgeFactor); % edge detection based on threshold
 
 %     fudgeFactor = 1.5; % 0.4-0.6
 %     BWs = edge(gray_image,'Canny',threshold * fudgeFactor);
@@ -275,7 +281,7 @@ end
 hold off;
 
 
-%% Segmentation based on edge-detection and morphology (1. part of the algorithm)
+%% Segmentation based on edge-detection and morphology (2. part of the algorithm)
 rows = 5; columns = 5;
 fudgeFactor = 0.7; % 0.4-0.6
 
