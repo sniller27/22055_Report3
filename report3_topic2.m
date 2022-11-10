@@ -90,7 +90,31 @@ hold on;
 for i=1:images_count
     
     gray_image = cell2mat(melanoma_image_grayscale(i));
-    binI = (gray_image > 0) & (gray_image < thresholds(i)); % thresholding
+    %gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
+    %gray_image = adapthisteq(cell2mat(melanoma_image_grayscale(i)));
+    
+    % MULTIPLE THRESHOLDING DONE MANUALLY (more precise due analyzed and changed histograms points)
+    binI = (gray_image > 0) & (gray_image < thresholds(i)); % thresholding ... 4 sec
+    
+    % MULTIPLE THRESHOLDING VIA MULTITHRESH
+    % (last peak from ruler should be removed first)
+%     level1 = multithresh(gray_image); % REMEMBER SECOND PARAM ON IMSHOW(XXX,[]); ... 37 SEC ... returns normalized threshold in same range as image
+%     binI = imquantize(gray_image,level1); % thresholds multithresh
+
+    % MULTIPLE THRESHOLDING VIA GRAYTRESH
+    % (last peak from ruler should be removed first)
+%     level2 = graythresh(gray_image); % FASTER ... 8 SEC ... returns normalized threshold [0,1]
+%     binI = imbinarize(gray_image,level2); % thresholds graytresh
+
+    % MULTIPLE THRESHOLDING VIA OTSUTRESH
+%     [counts,x] = imhist(gray_image,8);
+%      T = otsuthresh(counts);
+%      binI = imbinarize(gray_image,T);
+
+    % MULTIPLE THRESHOLDING VIA ADAPTTRESH
+    % (last peak from ruler should be removed first)
+%     T = adaptthresh(gray_image,0.64);
+%     binI = imbinarize(gray_image,T);
     
     subplot(columns,rows,i);
     title(i);
@@ -119,6 +143,7 @@ for i=1:images_count
     thresholded_images(i) = {binI};
     
     imshow(binI);
+    %imshow(binI,[]) % for multihresh
     %imshow(labeloverlay(gray_image,binI));
     
 end

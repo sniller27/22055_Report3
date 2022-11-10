@@ -90,35 +90,54 @@ hold on;
 for i=1:images_count
     
     gray_image = cell2mat(melanoma_image_grayscale(i));
-    binI = (gray_image > 0) & (gray_image < thresholds(i)); % thresholding
+    
+    % MULTIPLE THRESHOLDING DONE MANUALLY (more precise due analyzed and changed histograms points)
+    %binI = (gray_image > 0) & (gray_image < thresholds(i)); % thresholding ... 4 sec
+    
+    % MULTIPLE THRESHOLDING VIA MULTITHRESH
+    % (last peak from ruler should be removed first)
+%     level1 = multithresh(gray_image); % REMEMBER SECOND PARAM ON IMSHOW(XXX,[]); ... 37 SEC ... returns normalized threshold in same range as image
+%     binI = imquantize(gray_image,level1); % thresholds multithresh
+
+    % MULTIPLE THRESHOLDING VIA GRAYTRESH
+    % (last peak from ruler should be removed first)
+%     level2 = graythresh(gray_image); % FASTER ... 8 SEC ... returns normalized threshold [0,1]
+%     binI = imbinarize(gray_image,level2); % thresholds graytresh
+
+    % MULTIPLE THRESHOLDING VIA GRAYTRESH
+    % (last peak from ruler should be removed first)
+    [counts,x] = imhist(gray_image,11);
+     T = otsuthresh(counts);
+     binI = imbinarize(gray_image,T); % thresholds graytresh
     
     subplot(columns,rows,i);
     title(i);
     hold on;
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     se = strel('disk',5);            
-%     binI = imdilate(binI,se);
-
-    L = bwlabel(binI,8);
-
-    imgStats = regionprops(L, 'All');
-
-    circularity = [imgStats.Circularity];
-    
-     area = [imgStats.Area];
-     
-     %idx = find(area > 22000); % shows all melanomas (but with rulers)
-     idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
- 
-    binI = ismember(L,idx);
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    binI = imfill(binI,'holes');
-    
-    thresholded_images(i) = {binI};
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %     se = strel('disk',5);            
+% %     binI = imdilate(binI,se);
+% 
+%     L = bwlabel(binI,8);
+% 
+%     imgStats = regionprops(L, 'All');
+% 
+%     circularity = [imgStats.Circularity];
+%     
+%      area = [imgStats.Area];
+%      
+%      %idx = find(area > 22000); % shows all melanomas (but with rulers)
+%      idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+%  
+%     binI = ismember(L,idx);
+%     
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     binI = imfill(binI,'holes');
+%     
+%     thresholded_images(i) = {binI};
     
     imshow(binI);
+    %imshow(binI,[]) % for multihresh
     %imshow(labeloverlay(gray_image,binI));
     
 end
@@ -251,20 +270,57 @@ hold off;
 
 
 %% Segmentation based on edge-detection and morphology (1. part of the algorithm)
-rows = 5;
-columns = 5;
+rows = 5; columns = 5;
+fudgeFactor = 0.7; % 0.4-0.6
 
 figure;
 sgtitle('Melanoma');
-for i=1:images_count
+for i=1:25
     
-    gray_image = histeq(cell2mat(edge_segmented(i)); % fudge=0.5.
-    if edge_segmented(i) == 0
+    segmented = cell2mat(edge_segmented(i)); % fudge=0.5.
+    if segmented == 0
         
-        2+2
-%         subplot(columns,rows,i);
-%         imshow(cell2mat(melanoma_image_grayscale(i)))
-%         title(cell2mat(detection_result(i)));
+        gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
+
+        [~,threshold] = edge(gray_image,'sobel');
+        
+        %BWs = logical(255) - BWs; % inverting the image
+
+        BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
+        
+        
+        SE = strel('disk',6);     
+        BWs = imdilate(BWs,SE);
+        
+        SE = strel('disk',5);     
+        BWs = imerode(BWs,SE);
+        
+%         SE = strel('disk',10);     
+%         BWs = imdilate(BWs,SE);
+        
+        BWs = imfill(BWs,'holes');
+        
+        %%%%%%%%%%%%%%%%%%%%%
+        L = bwlabel(BWs,8);
+
+        imgStats = regionprops(L, 'All');
+
+        circularity = [imgStats.Circularity];
+
+        area = [imgStats.Area];
+
+        idx = find(area > 1200000 & circularity > 0.05); % shows all melanomas (but with rulers)
+        %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
+        %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+
+        BWs = ismember(L,idx);
+        
+        %%%%%%%%%%%%%%%%%%%%%
+        
+        
+        subplot(columns,rows,i);
+        imshow(BWs);
+        
     end
     
 end
@@ -322,6 +378,32 @@ for i=1:images_count
     
 end
 hold off;
+
+%%
+I = cell2mat(melanoma_image_grayscale(1));
+
+% figure;
+% imshow(I);
+
+level1 = multithresh(I);
+level2 = graythresh(I);
+
+seg_I = imquantize(I,level1);
+BW2 = imbinarize(I,level2);
+
+figure;
+imhist(level1);
+
+figure;
+imhist(level2);
+
+% figure;
+% %imshowpair(I,BW2,'montage')
+% imshow(BW2);
+% 
+% figure
+% imshow(seg_I,[])
+
 %% DETECTION: print detections
 rows = 5;
 columns = 5;
