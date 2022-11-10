@@ -87,7 +87,7 @@ T2 = 100; % Upper limit (cancer melanoma)
 figure;
 sgtitle('Images thresholded');
 hold on;
-for i=1:1
+for i=1:images_count
     
     gray_image = cell2mat(melanoma_image_grayscale(i));
     %gray_image = histeq(cell2mat(melanoma_image_grayscale(i)));
@@ -127,21 +127,6 @@ for i=1:1
     L = bwlabel(binI,8);
 
     imgStats = regionprops(L, 'All');
-    
-    %%%% EXAMINING IMAGE PROPERTIES %%%%
-%     imageProperty = fieldnames(imgStats);
-%     
-%     figure;
-%     sgtitle('Properties of image regions');
-%     for i=1:length(imageProperty)
-%         subplot(6,5,i);
-%         try
-%             plot([imgStats.(imageProperty{i})]);
-%         catch
-%             warning('Problem using function.  Assigning a value of 0.');
-%         end
-%         title(cell2mat(imageProperty(i)));
-%     end
 
     circularity = [imgStats.Circularity];
     
@@ -216,18 +201,20 @@ fudgeFactor = 0.5; % 0.4-0.6
 figure;
 sgtitle('Segmentation based on edge detection and morphology');
 hold on;
-for i=1:1
+for i=1:25
     
     % fudgeFactor = fudgeFactor + increase;
     
+    % DIFFERENT KINDS OF IMAGE ENHANCEMENTS
     % link: https://www.mathworks.com/help/images/contrast-enhancement-techniques.html
     %gray_image = cell2mat(melanoma_image_grayscale(9)); % fudge=0.5.
     gray_image = histeq(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
     %gray_image = adapthisteq(cell2mat(melanoma_image_grayscale(9)));
     %gray_image = imadjust(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
     %gray_image = imsharpen(gray_image);
-    gray_image = imgaussfilt(gray_image,1);
+    %gray_image = imgaussfilt(gray_image,1);
     
+    % EDGE THRESHOLDING
     [~,threshold] = edge(gray_image,'sobel');
     
     BWs = edge(gray_image,'sobel',threshold * fudgeFactor); % edge detection based on threshold
@@ -240,45 +227,45 @@ for i=1:1
     
     BWs = logical(255) - BWs; % inverting the image
     
-%     SE = strel('disk',6);     
-%     BWs = imerode(BWs,SE);
-%     
-%     SE = strel('disk',12);     
-%     BWs = imdilate(BWs,SE);
-%     
-%     %BWs = imfill(BWs,'holes');
-%         
-%     SE = strel('disk',18);     
-%     BWs = imerode(BWs,SE);
-%     
-%     BWs = imfill(BWs);
-%     
-%     %%%%%%%%%%%%%%%%%%%%%
-%     L = bwlabel(BWs,8);
-% 
-%     imgStats = regionprops(L, 'All');
-% 
-%     circularity = [imgStats.Circularity];
-%     
-%     area = [imgStats.Area];
-%      
-%     idx = find(area > 85000 & circularity > 0.22); % shows all melanomas (but with rulers)
-%     %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
-%     %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
-%     
-%     [qty,data] = size(idx);
-%     
-%     if data >= 1
-%         edge_segmented(i) = {1};
-%     else
-%         edge_segmented(i) = {0};
-%     end
-%      
-%     BWs = ismember(L,idx);
-%     BWs = imclearborder(BWs,4);
-%     %%%%%%%%%%%%%%%%%%%%%
-%     
-%     edged_images(i) = {BWs};
+    SE = strel('disk',6);     
+    BWs = imerode(BWs,SE);
+    
+    SE = strel('disk',12);     
+    BWs = imdilate(BWs,SE);
+    
+    %BWs = imfill(BWs,'holes');
+        
+    SE = strel('disk',18);     
+    BWs = imerode(BWs,SE);
+    
+    BWs = imfill(BWs);
+    
+    %%%%%%%%%%%%%%%%%%%%%
+    L = bwlabel(BWs,8);
+
+    imgStats = regionprops(L, 'All');
+
+    circularity = [imgStats.Circularity];
+    
+    area = [imgStats.Area];
+     
+    idx = find(area > 85000 & circularity > 0.22); % shows all melanomas (but with rulers)
+    %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
+    %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+    
+    [qty,data] = size(idx);
+    
+    if data >= 1
+        edge_segmented(i) = {1};
+    else
+        edge_segmented(i) = {0};
+    end
+     
+    BWs = ismember(L,idx);
+    BWs = imclearborder(BWs,4);
+    %%%%%%%%%%%%%%%%%%%%%
+    
+    edged_images(i) = {BWs};
     
 %     figure;
 %     imshow(BWs);
@@ -356,6 +343,9 @@ benign = cell(1,14);
 malign = cell(1,10);
 detection_result = cell(1,25);
 
+min_benign = 0;
+max_malign = 0;
+
 figure;
 sgtitle('Melanoma masks');
 hold on;
@@ -379,23 +369,41 @@ for i=1:images_count
     end
     
     %subplot(columns,rows,i);
-    cutoff_malign = 65;
+    cutoff_malign = 50; 
     oki = oki(oki < cutoff_malign);
     hout = histogram(oki);
 
-    %mean(oki) % 56-61 (benign)
+    %mean(oki) % 56-61 (benign) (50 joker)
     %mean(oki) % 43-55 (malign)
     %median(oki)
-    % mean(oki)
+    %mean(oki)
+    
+    if i < 15
+        if i == 1
+            min_benign = mean(oki);
+        end
+        
+        if min_benign > mean(oki)
+            min_benign = mean(oki);
+        end
+    else
+        if i == 15
+            max_malign = mean(oki);
+        end
+        
+        if max_malign < mean(oki)
+            max_malign = mean(oki);
+        end
+    end
     
     % DETECT BASED ON MEAN PIXEL VALUE
-    if mean(oki) < 55.5
-        detection_result(i) = {'Malign'};
-        fprintf('malign \n');
-    else
-        detection_result(i) = {'Benign'};
-        fprintf('benign \n');
-    end
+%     if mean(oki) < 55.5
+%         detection_result(i) = {'Malign'};
+%         fprintf('malign \n');
+%     else
+%         detection_result(i) = {'Benign'};
+%         fprintf('benign \n');
+%     end
     
 %     subplot(columns,rows,i);
 %     imshow(maskedImage);
@@ -403,6 +411,13 @@ for i=1:images_count
     
 end
 hold off;
+
+if min_benign < max_malign
+        fprintf('Nope \n');
+else
+        fprintf('Måske \n');
+end
+
 %% DETECTION: print detections
 rows = 5;
 columns = 5;

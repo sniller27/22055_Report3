@@ -183,6 +183,103 @@ for i=1:images_count
 end
 hold off;
 
+%% 2.b) Detection: only select melanomas from segments (masks) ... based on histograms pixel means (maligns are darker)
+benign = cell(1,14);
+malign = cell(1,10);
+detection_result = cell(1,25);
+
+min_benign = 0;
+max_malign = 0;
+
+figure;
+sgtitle('Melanoma masks');
+hold on;
+for i=1:images_count
+    
+    % MAKING IMAGE MASKS
+    thresholded_image = cell2mat(thresholded_images(i));
+    gray_image = cell2mat(melanoma_image_grayscale(i));
+    
+    mask = cast(thresholded_image, class(gray_image));
+    maskedImage = bsxfun(@times,gray_image,cast(mask,class(gray_image)));
+    
+    nonZeroIndexes = maskedImage ~= 0;
+    oki = maskedImage(nonZeroIndexes);
+    % maskedRgbImage2 = (maskedRgbImage > 0);
+    
+    if i >= 15
+        malign(i-14) = {oki};
+    else
+       benign(i) = {oki};
+    end
+    
+    %subplot(columns,rows,i);
+    cutoff_malign = 44; 
+    oki = oki(oki < cutoff_malign);
+    %hout = histogram(oki);
+
+    %mean(oki) % 56-61 (benign)
+    %mean(oki) % 43-55 (malign)
+    %median(oki)
+    %mean(oki)
+%     
+%     if i < 15
+%         if i == 1
+%             min_benign = mean(oki);
+%         end
+%         
+%         if min_benign > mean(oki)
+%             min_benign = mean(oki);
+%         end
+%     else
+%         if i == 15
+%             max_malign = mean(oki);
+%         end
+%         
+%         if max_malign < mean(oki)
+%             max_malign = mean(oki);
+%         end
+%     end
+    
+    % DETECT BASED ON MEAN PIXEL VALUE
+    if mean(oki) < 37.5
+        detection_result(i) = {'Malign'};
+        fprintf('malign \n');
+    else
+        detection_result(i) = {'Benign'};
+        fprintf('benign \n');
+    end
+    
+%     subplot(columns,rows,i);
+%     imshow(maskedImage);
+%     title(i);
+    
+end
+hold off;
+
+if min_benign < max_malign
+        fprintf('No separation between benign and malign \n');
+else
+        fprintf('Maybe there is a separation between benign and malign \n');
+end
+
+%% b.) DETECTION: print detections
+rows = 5;
+columns = 5;
+
+figure;
+sgtitle('Melanoma classification');
+for i=1:images_count
+    subplot(columns,rows,i);
+    imshow(cell2mat(melanoma_image_grayscale(i)))
+%     if i == 13
+%         title(cell2mat(detection_result(i)),'Color','red');
+%     else
+         title(cell2mat(detection_result(i)),'Color','green');
+%     end
+    
+end
+
 %% 2.c) 
 edged_images = cell(1,images_count);
 rows = 5; columns = 5;
@@ -191,7 +288,7 @@ rows = 5; columns = 5;
 % sgtitle('Images thresholded');
 % hold on;
 
-%% Segmentation based on edge-detection and morphology (1. part of the algorithm)
+%% 2.c) Segmentation based on edge-detection and morphology (1. part of the algorithm)
 rows = 5; columns = 5;
 edge_segmented = cell(1,25);
 
@@ -281,7 +378,7 @@ end
 hold off;
 
 
-%% Segmentation based on edge-detection and morphology (2. part of the algorithm)
+%% 2.c) Segmentation based on edge-detection and morphology (2. part of the algorithm)
 rows = 5; columns = 5;
 fudgeFactor = 0.7; % 0.4-0.6
 
@@ -338,69 +435,7 @@ for i=1:25
 end
 
 
-%% Detection: only select melanomas from segments (masks) ... based on histograms pixel means (maligns are darker)
-benign = cell(1,14);
-malign = cell(1,10);
-detection_result = cell(1,25);
 
-figure;
-sgtitle('Melanoma masks');
-hold on;
-for i=1:images_count
-    
-    % MAKING IMAGE MASKS
-    thresholded_image = cell2mat(thresholded_images(i));
-    gray_image = cell2mat(melanoma_image_grayscale(i));
-    
-    mask = cast(thresholded_image, class(gray_image));
-    maskedImage = bsxfun(@times,gray_image,cast(mask,class(gray_image)));
-    
-    nonZeroIndexes = maskedImage ~= 0;
-    oki = maskedImage(nonZeroIndexes);
-    % maskedRgbImage2 = (maskedRgbImage > 0);
-    
-    if i >= 15
-        malign(i-14) = {oki};
-    else
-       benign(i) = {oki};
-    end
-    
-    %subplot(columns,rows,i);
-    cutoff_malign = 65;
-    oki = oki(oki < cutoff_malign);
-    hout = histogram(oki);
-
-    %mean(oki) % 56-61 (benign)
-    %mean(oki) % 43-55 (malign)
-    %median(oki)
-    % mean(oki)
-    
-    % DETECT BASED ON MEAN PIXEL VALUE
-    if mean(oki) < 55.5
-        detection_result(i) = {'Malign'};
-        fprintf('malign \n');
-    else
-        detection_result(i) = {'Benign'};
-        fprintf('benign \n');
-    end
-    
-%     subplot(columns,rows,i);
-%     imshow(maskedImage);
-%     title(i);
-    
-end
-hold off;
-%% DETECTION: print detections
-rows = 5;
-columns = 5;
-
-figure;
-sgtitle('Melanoma');
-for i=1:images_count
-    subplot(columns,rows,i);
-    imshow(cell2mat(melanoma_image_grayscale(i)))
-    title(cell2mat(detection_result(i)));
-end
 
 
 
