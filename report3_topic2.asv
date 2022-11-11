@@ -297,27 +297,32 @@ rows = 5; columns = 5;
 edge_segmented = cell(1,25);
 
 fudgeFactor = 0.5; % 0.4-0.6
+%increase = 0.02;
 
 figure;
 sgtitle('Segmentation based on edge detection and morphology');
 hold on;
-for i=1:images_count
+for i=1:1
     
     % fudgeFactor = fudgeFactor + increase;
     
     % DIFFERENT KINDS OF IMAGE ENHANCEMENTS
     % link: https://www.mathworks.com/help/images/contrast-enhancement-techniques.html
-    %gray_image = cell2mat(melanoma_image_grayscale(i)); % fudge=0.5.
-    gray_image = histeq(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
+    gray_image = cell2mat(melanoma_image_grayscale(i)); % fudge=0.5.
+    %gray_image = histeq(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
     %gray_image = HistStretch(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
     %gray_image = adapthisteq(cell2mat(melanoma_image_grayscale(i)));
     %gray_image = imadjust(cell2mat(melanoma_image_grayscale(i))); % fudge=0.5.
     %gray_image = imsharpen(gray_image);
-    %gray_image = imgaussfilt(gray_image,1);
+    %gray_image = imgaussfilt(gray_image,2);
+    
+    gray_image = gray_image - min(gray_image(:));
+    doubim = 255*(double(gray_image)/double(max(gray_image(:))));
+    gray_image = uint8(doubim);
+    gray_image = kernelProcessing(gray_image, 90);
     
     % EDGE THRESHOLDING
     [~,threshold] = edge(gray_image,'sobel');
-    
     BWs = edge(gray_image,'sobel',threshold * fudgeFactor); % edge detection based on threshold
 
 %     fudgeFactor = 1.5; % 0.4-0.6
@@ -326,64 +331,86 @@ for i=1:images_count
 %     fudgeFactor = 0.5; % 0.4-0.6
    % BWs = edge(gray_image,'sobel',threshold * fudgeFactor);
     
-    BWs = logical(255) - BWs; % inverting the image
+   % BWs = logical(255) - BWs; % inverting the image
     
-    SE = strel('disk',6);     
-    BWs = imerode(BWs,SE);
-    
-    SE = strel('disk',12);     
-    BWs = imdilate(BWs,SE);
-    
-    %BWs = imfill(BWs,'holes');
-        
-    SE = strel('disk',18);     
-    BWs = imerode(BWs,SE);
-    
-    BWs = imfill(BWs);
-    
-    %%%%%%%%%%%%%%%%%%%%%
-    L = bwlabel(BWs,8);
-
-    imgStats = regionprops(L, 'All');
-
-    circularity = [imgStats.Circularity];
-    
-    area = [imgStats.Area];
-     
-    idx = find(area > 85000 & circularity > 0.22); % shows all melanomas (but with rulers)
-    %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
-    %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
-    
-    [qty,data] = size(idx);
-    
-    if data >= 1
-        edge_segmented(i) = {1};
-    else
-        edge_segmented(i) = {0};
-    end
-     
-    BWs = ismember(L,idx);
-    BWs = imclearborder(BWs,4);
-    %%%%%%%%%%%%%%%%%%%%%
-    
-    edged_images(i) = {BWs};
+%     SE = strel('disk',12);     
+%     BWs = imerode(BWs,SE);
+%     
+%     SE = strel('disk',12);     
+%     BWs = imdilate(BWs,SE);
+%     
+%     %BWs = imfill(BWs,'holes');
+%         
+%     SE = strel('disk',18);     
+%     BWs = imerode(BWs,SE);
+%     
+%     BWs = imfill(BWs);
+%     
+%     %%%%%%%%%%%%%%%%%%%%%
+%     L = bwlabel(BWs,8);
+% 
+%     imgStats = regionprops(L, 'All');
+% 
+%     circularity = [imgStats.Circularity];
+%     
+%     area = [imgStats.Area];
+%      
+%     idx = find(area > 85000 & circularity > 0.22); % shows all melanomas (but with rulers)
+%     %idx = find(circularity > 0.025); % shows all melanomas (but with rulers)
+%     %idx = find(area > 22000 & circularity > 0.025); % good for removing of rulers (but also 2 melanomas)
+%     
+%     [qty,data] = size(idx);
+%     
+%     if data >= 1
+%         edge_segmented(i) = {1};
+%     else
+%         edge_segmented(i) = {0};
+%     end
+%      
+%     BWs = ismember(L,idx);
+%     BWs = imclearborder(BWs,4);
+%     %%%%%%%%%%%%%%%%%%%%%
+%     
+%     edged_images(i) = {BWs};
     
 %     figure;
 %     imshow(BWs);
 
      subplot(columns,rows,i);
      imshow(BWs);
+     %imhist(gray_image);
     
     %imshow(labeloverlay(gray_image,binI));
-    title(i);
+    title(fudgeFactor);
     %hold on;
     
 end
+hold off;
 
-% 2.c) Segmentation based on edge-detection and morphology (2. part of the algorithm)
+%%
+I2 = imread('cell.png');
+
+[~,threshold2] = edge(I2,'sobel');
+fudgeFactor2 = 0.5;
+BWs2 = edge(I2,'sobel',threshold2 * fudgeFactor2);
+
+figure;
+imshow(I2);
+
+figure;
+imshow(BWs2);
+
+figure;
+imhist(I2);
+
+
+%% 2.c) Segmentation based on edge-detection and morphology (2. part of the algorithm)
+rows = 5; columns = 5;
 fudgeFactor = 0.7; % 0.4-0.6
 
-for i=1:images_count
+figure;
+sgtitle('Melanoma');
+for i=1:25
     
     segmented = cell2mat(edge_segmented(i)); % fudge=0.5.
     if segmented == 0
@@ -428,51 +455,11 @@ for i=1:images_count
         
         subplot(columns,rows,i);
         imshow(BWs);
-        title(i);
         
     end
     
 end
 
-%% Nicolais code
-rows = 5; columns = 5;
-edge_segmented = cell(1,25);
-
-fudgeFactor = 0.5; % 0.4-0.6
-
-figure;
-sgtitle('Segmentation based on edge detection and morphology');
-hold on;
-for i=1:25
-    
-    gray_image = cell2mat(melanoma_image_grayscale(i)); % fudge=0.5.
-    
-    %%%%%%% Nicolai's code start %%%%%%%
-    gray_image = gray_image - min(gray_image(:));
-    doubim = 255*(double(gray_image)/double(max(gray_image(:))));
-    gray_image = uint8(doubim);
-    subplot(1,2,1)
-    imshow(gray_image)
-    gray_image = kernelProcessing(gray_image, 90, 0);
-    subplot(1,2,2)
-    imshow(gray_image)
-    figure;
-    %%%%%%% Nicolai's code end %%%%%%%
-    
-    % EDGE THRESHOLDING
-    [~,threshold] = edge(gray_image,'sobel');
-    BWs = edge(gray_image,'sobel',threshold * fudgeFactor); % edge detection based on threshold
-
-    subplot(columns,rows,i);
-    imshow(BWs);
-    %imhist(gray_image);
-
-    %imshow(labeloverlay(gray_image,binI));
-    title(fudgeFactor);
-    %hold on;
-
-end
-hold off;
 
 
 
