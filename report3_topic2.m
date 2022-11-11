@@ -28,9 +28,13 @@ melanoma_image_grayscale = cell(1,images_count); % create cell-array for graysca
 
 figure;
 sgtitle('Melanomas (grayscaled)');
+%sgtitle('GREEN-channel melanomas');
 for i=1:images_count
     img = cell2mat(melanoma_image(i)); % read image
     melanoma_image_grayscale(i) = {rgb2gray(img)}; % convert to grayscale
+    %melanoma_image_grayscale(i) = {img(:,:,1)}; % RED-channel (brighter?)
+    %melanoma_image_grayscale(i) = {img(:,:,2)}; % GREEN-channel (darker?)
+    %melanoma_image_grayscale(i) = {img(:,:,3)}; % BLUE-channel
     
     % show image
     subplot(columns,rows,i);
